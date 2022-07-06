@@ -6,19 +6,19 @@ void NoOpDeallocator(void* data, size_t a, void* b) {}
 
 int main()
 {
-    //********* Read model
+    //********* 1. Create a Graph
     TF_Graph* Graph = TF_NewGraph(); // Create a graph
     TF_Status* Status = TF_NewStatus(); // data structure for catching errors
 
-    // Prepare a Session: a session is the frontend of Tensorflow that can be used to perform computation. It will return predictions given some input.
-    // 1. Create the necessary structures for options
+    // 2. Prepare a Session: a session is the frontend of Tensorflow that can be used to perform computation. It will return predictions given some input.
+        // 2.1. Create the necessary structures for options
     TF_SessionOptions* SessionOpts = TF_NewSessionOptions(); 
     TF_Buffer* RunOpts = NULL;
-    // 2. provide information about the model to be loaded.
+        // 2.2 provide information about the model to be loaded.
     const char* saved_model_dir = "model/";
     const char* tags = "serve"; // default model serving tag; can change in future
     int ntags = 1;
-    //3. instantiate the session
+        //2.3 instantiate the session
     TF_Session* Session = TF_LoadSessionFromSavedModel(SessionOpts, RunOpts, saved_model_dir, &tags, ntags, Graph, NULL, Status);
     if(TF_GetCode(Status) == TF_OK)
     {
@@ -29,8 +29,9 @@ int main()
         printf("%s",TF_Message(Status));
     }
 
-    //****** Get input tensor
-    //TODO : need to use saved_model_cli to read saved_model arch
+    //****** 3. Define input/output tensor
+     // need to use saved_model_cli to read saved_model arch
+     // input tensor
     int NumInputs = 1;
     TF_Output* Input = (TF_Output*)malloc(sizeof(TF_Output) * NumInputs);
 
@@ -42,7 +43,7 @@ int main()
     
     Input[0] = t0;
     
-    //********* Get Output tensor
+    //Output tensor
     int NumOutputs = 1;
     TF_Output* Output = (TF_Output*)malloc(sizeof(TF_Output) * NumOutputs);
 
@@ -54,7 +55,7 @@ int main()
     
     Output[0] = t2;
 
-    //********* Allocate data for inputs & outputs
+    //********* 4. Allocate data for inputs & outputs
     TF_Tensor** InputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumInputs);
     TF_Tensor** OutputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumOutputs);
 
@@ -78,7 +79,7 @@ int main()
     
     InputValues[0] = int_tensor;
     
-    // //Run the Session
+    // *******5. Run the Session
     TF_SessionRun(Session, NULL, Input, InputValues, NumInputs, Output, OutputValues, NumOutputs, NULL, 0,NULL , Status);
 
     if(TF_GetCode(Status) == TF_OK)
@@ -90,7 +91,7 @@ int main()
         printf("%s",TF_Message(Status));
     }
 
-    // //Free memory
+    // ***** 6. Free memory
     TF_DeleteGraph(Graph);
     TF_DeleteSession(Session, Status);
     TF_DeleteSessionOptions(SessionOpts);
